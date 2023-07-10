@@ -1,38 +1,36 @@
-const { createServer } = require('http');
-const { parse } = require('url');
-const next = require('next');
+const express = require("express");
+const mongoose = require("mongoose");
+const cors = require("cors");
 
-const dev = process.env.NODE_ENV !== 'production';
-const port = process.env.PORT || 3005;
-const app = next({ dev });
-const handle = app.getRequestHandler();
 
-app.prepare().then(() => {
-	createServer((req, res) => {
-		// Be sure to pass `true` as the second argument to `url.parse`.
-		// This tells it to parse the query portion of the URL.
-		const parsedUrl = parse(req.url, true);
-		const { pathname, query } = parsedUrl;
+const app = express();
 
-		if (pathname === '/a') {
-			app.render(req, res, '/a', query);
-		} else if (pathname === '/b') {
-			app.render(req, res, '/b', query);
-		} else {
-			handle(req, res, parsedUrl);
-		}
-	}).listen(port, (err) => {
-		if (err) throw err;
-		console.log(`> Ready on http://localhost:${port}`);
-	});
+app.use(cors());
+app.use(express.json());
+
+app.use("/home", (req,res) => {
+    res.json({
+        msg:"Hi Im from express app-- after github ci cd pipeline"
+    })
+})
+
+//routes middleware
+app.use("/users",require("./routes/user"));
+app.use("/send",require("./routes/sendEmail"));
+
+//Catching 404 Error
+app.use((req, res, next) => {
+    const error = new Error("INVALID ROUTE");
+    error.status = 404;
+    next(error);
 });
 
-// var express = require('express');
-
-// var app = express();
-
-// app.get('/', function (req, res) {
-// 	res.send('Express is working on IISNode!');
-// });
-
-// app.listen(process.env.PORT);
+const PORT = 8000;
+mongoose.connect("mongodb+srv://sachin:02112003@mycluster.vpmrumy.mongodb.net/crud-app?retryWrites=true&w=majority")
+.then(()=>{
+    console.log("database connected");
+    app.listen(PORT,()=>console.log(`server is running on port ${PORT}`))
+})
+.catch((err)=>{
+   console.log(err.message);
+})
